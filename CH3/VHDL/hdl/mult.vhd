@@ -1,7 +1,5 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
-use IEEE.std_logic_misc.all;
-use IEEE.std_logic_signed.all;
 use IEEE.numeric_std.all;
 
 entity mult is
@@ -21,6 +19,6 @@ begin
     a_in := signed(SW(BITS-1 downto BITS/2));
     b_in := signed(SW(BITS/2-1 downto 0));
     result := a_in * b_in;
-    LED <= std_logic_vector(resize(result, BITS));
+    LED <= std_logic_vector(result);
   end process multiplier;
 end architecture rtl;
