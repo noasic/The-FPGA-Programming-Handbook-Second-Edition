@@ -11,7 +11,7 @@ architecture tb of tb is
   constant SELECTOR  : string := "UP_FOR";
   constant BITS      : integer := 16;
   constant NUM_TEST  : integer := 1000;
-
+  
   function no_func (SW : std_logic_vector(BITS-1 downto 0)) return unsigned is
     variable count : unsigned(natural(log2(real(BITS))) downto 0);
   begin
@@ -22,8 +22,8 @@ architecture tb of tb is
         end if;
     end loop;
     return count;
-  end function no_func;
-
+  end function no_func;  
+  
   function lo_func (SW : std_logic_vector(BITS-1 downto 0)) return unsigned is
     variable count : unsigned(natural(log2(real(BITS))) downto 0);
   begin
@@ -89,7 +89,7 @@ begin
     end if;
     finish;
   end process stimulus;
-
+  
   checker : process
     variable sw_add : signed(7 downto 0);
     variable sw_sub : signed(15 downto 0);
