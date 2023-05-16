@@ -75,6 +75,9 @@ architecture rtl of counting_buttons is
   attribute MARK_DEBUG of counter_en : signal is "TRUE";
   signal counter : integer range 0 to 255 := 0;
   attribute MARK_DEBUG of counter : signal is "TRUE";
+  signal reset_sync : std_logic_vector(1 downto 0) := (others => '1');
+  attribute ASYNC_REG of reset_sync : signal is "TRUE";
+  signal reset : std_logic;
 begin
 
   u_7seg : entity work.seven_segment
@@ -82,10 +85,20 @@ begin
                 CLK_PER      => CLK_PER,      -- Clock period in ns
                 REFR_RATE    => REFR_RATE)    -- Refresh rate in Hz
     port map(clk          => clk,
+             reset        => reset,
              encoded      => encoded,
              digit_point  => digit_point,
              anode        => anode,
              cathode      => cathode);
+
+  -- Reset Synchronizer
+  process (clk) begin
+    if rising_edge(clk) then
+      reset_sync <= reset_sync(0) & not CPU_RESETN;
+    end if;
+  end process;
+
+  reset <= reset_sync(1);
 
   -- Capture the rising edge of button press
   process (clk)
@@ -125,6 +138,11 @@ begin
           button_down <= '0';
         end if;
       end if;
+      if (reset) then
+        counter_en  <= '0';
+        counter     <= 0;
+        button_down <= '0';
+      end if;
     end if;
   end process;
 
@@ -138,7 +156,7 @@ begin
           encoded <= dec_inc(encoded);
         end if;
       end if;
-      if not CPU_RESETN then
+      if reset then
         for i in 0 to NUM_SEGMENTS-1 loop
           encoded(i) <= (others => '0');
         end loop;

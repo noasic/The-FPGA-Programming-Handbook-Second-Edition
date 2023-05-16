@@ -19,8 +19,9 @@ architecture rtl of divider_nr is
   constant BC : natural := natural(log2(real(BITS)));
 
   signal num_bits_w : std_logic_vector(BC downto 0);
-  signal num_bits   : unsigned(BC downto 0);
   signal int_remainder : signed(BITS  downto 0); -- Sized with additional sign
+  signal num_bits   : integer range 0 to BITS;
+  signal int_remainder : std_logic_vector(BITS  downto 0); -- Sized with additional sign
   type state_t is (IDLE, INIT, LEFT_SHIFT, TEST_REMAINDER0, TEST_REMAINDER1,
                    ADJ_REMAINDER0, ADJ_REMAINDER1, ADJ_REMAINDER2, UPDATE_QUOTIENT,
                    TEST_N, DIV_DONE);
@@ -28,7 +29,12 @@ architecture rtl of divider_nr is
 begin
 
   fsm: process (clk)
+  process (clk)
+    variable divisor_int : integer;
+    variable remainder_int : integer;
   begin
+    divisor_int   := to_integer(unsigned(divisor));
+    remainder_int := to_integer(unsigned(int_remainder));
     if rising_edge(clk) then
       done <= '0';
       case state is
@@ -38,7 +44,7 @@ begin
           state         <= LEFT_SHIFT;
           quotient      <= dividend sll (BITS - to_integer(unsigned(num_bits_w)));
           int_remainder <= (others =>'0');
-          num_bits      <= unsigned(num_bits_w);
+          num_bits      <= to_integer(unsigned(num_bits_w));
         when LEFT_SHIFT =>
           int_remainder <= int_remainder(BITS-1 downto 0) & quotient(BITS-1);
           quotient <= quotient(BITS-2 downto 0) & '0';
@@ -47,18 +53,18 @@ begin
           else
             state   <= ADJ_REMAINDER1;
           end if;
-        when ADJ_REMAINDER0 => 
+        when ADJ_REMAINDER0 =>
           state     <= UPDATE_QUOTIENT;
-          int_remainder <= int_remainder + signed("0" & divisor);
+          int_remainder <= std_logic_vector(to_unsigned(remainder_int + divisor_int, int_remainder'length));
         when ADJ_REMAINDER1 =>
           state     <= UPDATE_QUOTIENT;
-          int_remainder <= int_remainder - signed("0" & divisor);
+          int_remainder <= std_logic_vector(to_unsigned(remainder_int - divisor_int, int_remainder'length));
         when UPDATE_QUOTIENT =>
           state       <= TEST_N;
           quotient(0) <= not int_remainder(BITS);
           num_bits    <= num_bits - 1;
         when TEST_N =>
-          if or(num_bits) then
+          if num_bits > 0 then
             state <= LEFT_SHIFT;
           else
             state <= TEST_REMAINDER1;
@@ -71,13 +77,14 @@ begin
           end if;
         when ADJ_REMAINDER2 =>
           state     <= DIV_DONE;
-          int_remainder <= int_remainder + signed("0" & divisor);
+          int_remainder <= std_logic_vector(to_unsigned(remainder_int + divisor_int, int_remainder'length));
         when DIV_DONE =>
           done  <= '1';
           state <= IDLE;
         when others =>
           state <= IDLE;
       end case;
+      if reset then state <= IDLE; end if;
     end if;
   end process;
 
