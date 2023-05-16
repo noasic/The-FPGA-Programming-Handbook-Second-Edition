@@ -1,4 +1,4 @@
-LIBRARY IEEE, WORK;
+LIBRARY IEEE;
 USE IEEE.std_logic_1164.all;
 USE ieee.numeric_std.all;
 USE WORK.counting_buttons_pkg.all;
