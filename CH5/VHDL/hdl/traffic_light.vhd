@@ -65,8 +65,6 @@ begin
           left_right   <= YELLOW;
           enable_count <= '1';
           if counter = COUNT_10S then state <= INIT_UD_GREEN; end if;
-        when others =>
-          state <= INIT_UD_GREEN;
       end case;
     end if;
   end process;
@@ -87,7 +85,6 @@ begin
             G(0) <= '1';
           when RED =>
             R(0) <= '1';
-          when others =>
         end case;
         case up_down is
           when GREEN =>
@@ -97,7 +94,6 @@ begin
             G(1) <= '1';
           when RED =>
             R(1) <= '1';
-          when others =>
         end case;
       end if;
     end if;
