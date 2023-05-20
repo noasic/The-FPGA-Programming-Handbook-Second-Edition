@@ -30,7 +30,7 @@ architecture rtl of tb_pdm is
   signal AUD_SD  : std_logic;
 
   signal data_in : unsigned(6 downto 0) := (others => '0');
-  type array_2d is array (natural range <>) of unsigned(6 downto 0);
+  type array_2d is array (natural range <>) of unsigned(6 downto 0); -- REVIEW: I would call this type "u6_array_t" for better readability
   constant sin_table : array_2d(127 downto 0) :=
     (to_unsigned(16#00#,7), to_unsigned(16#01#,7), to_unsigned(16#03#,7), to_unsigned(16#04#,7),
      to_unsigned(16#06#,7), to_unsigned(16#07#,7), to_unsigned(16#09#,7), to_unsigned(16#0a#,7),
@@ -69,7 +69,7 @@ architecture rtl of tb_pdm is
 
 begin
 
-  process begin
+  process begin -- REVIEW: could be done in a one-liner: clk <= not clk after 5 ns;
     clk <= '0';
     wait for 5 ns;
     clk <= '1';
@@ -99,7 +99,7 @@ begin
   -- PDM generator
   process (m_clk) begin
     if rising_edge(m_clk) then
-      int_count <= int_count + 1;
+      int_count <= int_count + 1 when int_count < 127 else 0; -- REVIEW: integers don't wrap!
       if int_count = 127 then
         if counter = 255 then
           counter <= 0;

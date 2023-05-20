@@ -1,4 +1,4 @@
-LIBRARY IEEE, WORK;
+LIBRARY IEEE;
 USE IEEE.std_logic_1164.all;
 USE ieee.numeric_std.all;
 use IEEE.math_real.all;
@@ -16,8 +16,8 @@ entity i2c_temp is
         -- Temperature Sensor Interface
         TMP_SCL : inout std_logic;
         TMP_SDA : inout std_logic;
-        TMP_INT : inout std_logic;
-        TMP_CT  : inout std_logic;
+        TMP_INT : inout std_logic; -- REVIEW: port is not used
+        TMP_CT  : inout std_logic; -- REVIEW: port is not used
 
         -- 7 segment display
         anode   : out std_logic_vector(NUM_SEGMENTS-1 downto 0);
@@ -31,7 +31,7 @@ architecture rtl of i2c_temp is
   constant TIME_TSUSTA : integer := integer(600/CLK_PER);
   constant TIME_THIGH  : integer := integer(600/CLK_PER);
   constant TIME_TLOW   : integer := integer(1300/CLK_PER);
-  constant TIME_TSUDAT : integer := integer(20/CLK_PER);
+  constant TIME_TSUDAT : integer := integer(20/CLK_PER); -- REVIEW: constant is not used
   constant TIME_TSUSTO : integer := integer(600/CLK_PER);
   constant TIME_THDDAT : integer := integer(30/CLK_PER);
   constant I2C_ADDR    : std_logic_vector := "1001011"; -- 0x4B
@@ -68,9 +68,9 @@ architecture rtl of i2c_temp is
   type spi_t is (IDLE, START, TLOW, TSU, THIGH, THD, TSTO);
   signal spi_state : spi_t := IDLE;
   attribute MARK_DEBUG of spi_state : signal is "TRUE";
-  signal fraction : array_t(3 downto 0)(3 downto 0);
+  signal fraction : array_t(3 downto 0)(3 downto 0); -- REVIEW: signal is not used
   type int_array is array (0 to 15) of integer range 0 to 65535;
-  signal fraction_table : int_array :=
+  constant FRACTION_TABLE : int_array := -- REVIEW: refactored into a constant
     (0  => 0*625,
      1  => 1*625,
      2  => 2*625,
@@ -92,7 +92,7 @@ architecture rtl of i2c_temp is
   signal smooth_count : integer range 0 to SMOOTHING := 0;
   signal dout : std_logic_vector(15 downto 0);
   signal rden, rden_del : std_logic := '0';
-  signal accumulator : std_logic_vector(31 downto 0) := (others => '0');
+  signal accumulator : unsigned(31 downto 0) := (others => '0'); -- REVIEW: changed type to unsigned
 begin
 
   u_seven_segment : entity work.seven_segment
@@ -119,7 +119,7 @@ begin
       counter_reset <= '0';
       convert       <= '0';
 
-      case spi_state is
+      case spi_state is -- REVIEW: shouldn't this be called "i2c_state"?
         when IDLE =>
           i2c_data  <= '0' & I2C_ADDR  & '1' & '0' & "00000000" & '0' & "00000000" & '1' & '0' & '1';
           i2c_en    <= '1' & "1111111" & '1' & '0' & "00000000" & '1' & "00000000" & '1' & '1' & '1';
@@ -192,24 +192,24 @@ begin
         variable td_int     : integer;
         variable dout_int   : integer;
       begin
-        accum_int := to_integer(unsigned(accumulator));
-        td_int    := to_integer(unsigned(temp_data));
-        dout_int  := to_integer(unsigned(dout));
         if rising_edge(clk) then
+          accum_int := to_integer(accumulator); -- REVIEW: moved into the if block
+          td_int    := to_integer(unsigned(temp_data));
+          dout_int  := to_integer(unsigned(dout));
           rden           <= '0';
           rden_del       <= rden;
           smooth_convert <= '0';
           if convert then
             smooth_count            <= smooth_count + 1;
-            accumulator             <= std_logic_vector(to_unsigned(accum_int + td_int, accumulator'length));
+            accumulator             <= to_unsigned(accum_int + td_int, accumulator'length);
           elsif smooth_count = 16 then
             rden                    <= '1';
             smooth_count            <= smooth_count - 1;
           elsif rden then
-            accumulator             <= std_logic_vector(to_unsigned(accum_int - dout_int, accumulator'length));
+            accumulator             <= to_unsigned(accum_int - dout_int, accumulator'length);
           elsif rden_del then
             smooth_convert          <= '1';
-            smooth_data             <= accumulator(19 downto 4);
+            smooth_data             <= std_logic_vector(accumulator(19 downto 4));
           end if;
         end if;
       end process;
@@ -231,11 +231,11 @@ begin
   process (clk)
     variable sd_int : integer range 0 to 15;
   begin
-    sd_int := to_integer(unsigned(smooth_data(6 downto 3)));
     if rising_edge(clk) then
+      sd_int := to_integer(unsigned(smooth_data(6 downto 3))); -- REVIEW: moved into if block
       if smooth_convert then
         encoded_int  <= bin_to_bcd("00000000000000000000000" & smooth_data(15 downto 7)); -- Decimal portion
-        encoded_frac <= bin_to_bcd(std_logic_vector(to_unsigned(fraction_table(sd_int), 32)));
+        encoded_frac <= bin_to_bcd(std_logic_vector(to_unsigned(FRACTION_TABLE(sd_int), 32)));
         digit_point  <= "00010000";
       end if;
     end if;
