@@ -4,8 +4,7 @@ use IEEE.numeric_std.all;
 use IEEE.math_real.all;
 
 entity pdm_top is
-  generic (RAM_SIZE     : integer := 16384;
-           CLK_FREQ     : integer := 100); -- Mhz
+  generic (RAM_SIZE     : integer := 16384);
   port (clk         : in std_logic;
 
         -- Microphone interface
