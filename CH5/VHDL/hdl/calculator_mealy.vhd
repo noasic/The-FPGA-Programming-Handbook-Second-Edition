@@ -1,6 +1,12 @@
+-- calculator_mealy.vhd
+-- ------------------------------------
+-- Mealy version of the Calculator state machine
+-- ------------------------------------
+-- Author : Frank Bruno
+-- A mealy version of the Calculator state machine
 LIBRARY IEEE;
 USE IEEE.std_logic_1164.all;
-USE ieee.numeric_std.all;
+USE IEEE.numeric_std.all;
 use IEEE.math_real.all;
 use WORK.calculator_pkg.all;
 
@@ -30,12 +36,10 @@ architecture rtl of calculator_mealy is
 begin
 
   process (clk)
-    variable multiply   : integer;
-    variable switch_int : integer;
-    variable accum_int  : integer;
+    variable multiply   : unsigned(BITS+16-1 downto 0);
+    variable switch_int : unsigned(15 downto 0);
+    variable accum_int  : unsigned(31 downto 0);
   begin
-    switch_int := to_integer(unsigned(switch));
-    accum_int  := to_integer(unsigned(accumulator));
     if rising_edge(clk) then
       case state is
         when IDLE =>
@@ -52,14 +56,21 @@ begin
           -- a new value on the accumulator.
           state <= IDLE;
           if last_op(UP) then
-            multiply    := to_integer(unsigned(accumulator)) * switch_int;
-            accumulator <= std_logic_vector(to_unsigned(multiply, accumulator'length));
+            switch_int  := unsigned(switch);
+            multiply    := unsigned(accumulator) * switch_int;
+            -- note that even though the output is > 32 bits we will overflow
+            -- if larger.
+            accumulator <= std_logic_vector(multiply(31 downto 0));
           elsif last_op(DOWN) then
             state       <= IDLE;
           elsif last_op(LEFT) then
-            accumulator <= std_logic_vector(to_unsigned(accum_int + switch_int, accumulator'length));
+            switch_int  := unsigned(switch);
+            accum_int   := unsigned(accumulator) + switch_int;
+            accumulator <= std_logic_vector(accum_int(31 downto 0));
           elsif last_op(RIGHT) then
-            accumulator <= std_logic_vector(to_unsigned(accum_int - switch_int, accumulator'length));
+            switch_int  := unsigned(switch);
+            accum_int   := unsigned(accumulator) - switch_int;
+            accumulator <= std_logic_vector(accum_int(31 downto 0));
           else
             state <= IDLE;
           end if;

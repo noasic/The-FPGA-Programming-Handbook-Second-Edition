@@ -8,12 +8,12 @@ PACKAGE temp_pkg IS
   function bin_to_bcd (bin_in : in std_logic_vector(31 downto 0)) return array_t;
 end package temp_pkg;
 
-package body temp_pkg is 
+package body temp_pkg is
   function bin_to_bcd (bin_in : in std_logic_vector(31 downto 0)) return array_t is
     variable shifted : unsigned(NUM_SEGMENTS*4-1 downto 0);
     variable bin2bcd : array_t(NUM_SEGMENTS -1 downto 0)(3 downto 0);
   begin
-    
+
     shifted := (others => '0');
     shifted(1 downto 0) := unsigned(bin_in(31 downto 30));
     for i in 29 downto 1 loop

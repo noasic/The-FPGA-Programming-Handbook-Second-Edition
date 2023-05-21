@@ -1,13 +1,18 @@
+-- traffic_light.vhd
+-- ------------------------------------
+-- Traffic light controller
+-- ------------------------------------
+-- Author : Frank Bruno
 LIBRARY IEEE;
 USE IEEE.std_logic_1164.all;
-USE ieee.numeric_std.all;
+USE IEEE.numeric_std.all;
 use IEEE.math_real.all;
 
 entity traffic_light is
   generic (CLK_PER : integer := 10);
   port (clk     : in std_logic;
         SW      : in std_logic_vector(1 downto 0);
-         
+
         R, G, B : out std_logic_vector(1 downto 0));
 end entity traffic_light;
 architecture rtl of traffic_light is
@@ -32,7 +37,7 @@ begin
 
       if enable_count then
         counter <= counter + 1;
-      else 
+      else
         counter <= 0;
       end if;
 

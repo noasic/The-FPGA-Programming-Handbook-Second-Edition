@@ -30,11 +30,13 @@ end entity pdm_top;
 
 architecture rtl of pdm_top is
   attribute MARK_DEBUG : string;
-  signal amplitude : unsigned(6 downto 0);
+  attribute ASYNC_REG : string;
+  signal amplitude : std_logic_vector(6 downto 0);
   signal amplitude_valid : std_logic;
   attribute MARK_DEBUG of amplitude, amplitude_valid : signal is "TRUE";
   signal button_usync : std_logic_vector(2 downto 0);
   signal button_csync : std_logic_vector(2 downto 0);
+  attribute ASYNC_REG of button_usync, button_csync : signal is "TRUE";
   signal start_capture : std_logic := '0';
   signal m_clk_en : std_logic;
   signal m_clk_en_del : std_logic;
@@ -53,16 +55,16 @@ architecture rtl of pdm_top is
   signal AUD_PWM_en : std_logic;
   signal amp_counter : integer range 0 to 127;
   signal clr_addr    : integer range 0 to 15;
-  signal ram_rdaddr_sl : std_logic_vector(RSL2-1 downto 0);
+  signal ram_rdaddr_u : unsigned(RSL2-1 downto 0);
 begin
   AUD_SD <= '1';
   m_lr_sel <= '0';
 
-  u_pdm_inputs : entity work.pdm_inputs      
+  u_pdm_inputs : entity work.pdm_inputs
     generic map(
         CLK_FREQ => CLK_FREQ
     )
-    port map (clk => clk, -- REVIEW: module has no reset
+    port map (clk => clk,
               m_clk => m_clk,
               m_clk_en => m_clk_en,
               m_data => m_data,
@@ -74,13 +76,9 @@ begin
     -- Display using tricolor LED
     if rising_edge(clk) then
       if m_clk_en then
-        if light_count < 127 then -- REVIEW: unlike unsigned, integers don't wrap around so you have to make sure not to increment them above their max value.
-            light_count <= light_count + 1;
-        else
-            light_count <= 0;
-        end if;
+        light_count <= light_count + 1 when light_count < 127 else 0;
       end if;
-      B <= '1' when (40 - amplitude) < light_count else '0';
+      B <= '1' when (40 - unsigned(amplitude)) < light_count else '0';
       R <= '0';
       G <= '0';
     end if;
@@ -88,13 +86,13 @@ begin
 
   -- Capture the Audio data
   process (clk)
-    variable ram_wraddr_u : unsigned(RSL2-1 downto 0); -- REVIEW: changed to unsigned to simplify the code
+    variable ram_wraddr_u : unsigned(RSL2-1 downto 0);
     variable led_index : integer range 0 to 15;
   begin
     if rising_edge(clk) then
       button_csync <= button_csync(1 downto 0) & BTNC; -- REVIEW: create and use a synchronizer component for this. This is not a valid synchronizer.
       ram_we       <= '0';
-      for i in 0 to 15 loop -- REVIEW: hard-coded constant; could use LED'range instead
+      for i in LED'range loop
         if clr_led(i) then LED(i) <= '0'; end if;
       end loop;
       if button_csync(2 downto 1) = "01" then
@@ -124,8 +122,8 @@ begin
     end if;
   end process;
 
-  ram_rdaddr_sl <= std_logic_vector(to_unsigned(ram_rdaddr, RSL2));
-  clr_addr <= TO_INTEGER(unsigned(ram_rdaddr_sl(RSL2-1 downto RSL2-4)));
+  ram_rdaddr_u <= to_unsigned(ram_rdaddr, RSL2);
+  clr_addr <= TO_INTEGER(ram_rdaddr_u(RSL2-1 downto RSL2-4));
 
   -- Playback the audio
   process (clk)
@@ -154,7 +152,7 @@ begin
             AUD_PWM_en <= '0'; -- Activate pull up
           end if;
         end if;
-        if and ram_rdaddr_sl then
+        if and ram_rdaddr_u then
           start_playback <= '0';
         end if;
       end if;
