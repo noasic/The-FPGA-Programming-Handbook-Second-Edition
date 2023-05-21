@@ -27,7 +27,7 @@ begin
   begin
     if rising_edge(clk) then
       for i in 0 to 127 loop
-        int_data0(i) <= std_logic_vector(signed(in_data(i*2+0)) + signed(in_data(i*2+1)));
+        int_data0(i) <= std_logic_vector(signed(in_data(i*2+0)) + signed(in_data(i*2+1))); -- REVIEW: RHS is only 32 bits, needs to be resized to 64 bits to match LHS
       end loop;
       for i in 0 to 63 loop
         int_data1(i) <= std_logic_vector(signed(int_data0(i*2+0)) + signed(int_data0(i*2+1)));

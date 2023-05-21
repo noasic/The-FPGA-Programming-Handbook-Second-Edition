@@ -1,7 +1,5 @@
 LIBRARY IEEE, XPM;
 USE IEEE.std_logic_1164.all;
---USE IEEE.STD_LOGIC_ARITH.ALL;
-USE IEEE.std_logic_SIGNED.all;
 USE ieee.numeric_std.all;
 use IEEE.math_real.all;
 use XPM.vcomponents.all;
@@ -13,8 +11,8 @@ entity adt7420_i2c is
         -- Temperature Sensor Interface
         TMP_SCL : inout std_logic;
         TMP_SDA : inout std_logic;
-        TMP_INT : inout std_logic;
-        TMP_CT  : inout std_logic;
+        TMP_INT : inout std_logic; -- REVIEW: unused port
+        TMP_CT  : inout std_logic; -- REVIEW: unused port
 
         fix_temp_tvalid : out std_logic;
         fix_temp_tdata  : out std_logic_vector(15 downto 0));
@@ -27,7 +25,7 @@ architecture rtl of adt7420_i2c is
   constant TIME_TSUSTA : integer := integer(600/CLK_PER);
   constant TIME_THIGH  : integer := integer(600/CLK_PER);
   constant TIME_TLOW   : integer := integer(1300/CLK_PER);
-  constant TIME_TSUDAT : integer := integer(20/CLK_PER);
+  constant TIME_TSUDAT : integer := integer(20/CLK_PER); -- REVIEW: unused declaration
   constant TIME_TSUSTO : integer := integer(600/CLK_PER);
   constant TIME_THDDAT : integer := integer(30/CLK_PER);
   constant I2C_ADDR    : std_logic_vector := "1001011"; -- 0x4B
@@ -66,7 +64,7 @@ begin
   capture_en <= i2c_capt(I2CBITS - bit_count - 1);
 
   process (clk) begin
-    if rising_edge(clk) then
+    if rising_edge(clk) then -- REVIEW: process has no reset
       scl_en                     <= '1';
       sda_en                     <= not i2c_en(I2CBITS - bit_count - 1) or
                                     i2c_data(I2CBITS - bit_count - 1);
@@ -138,7 +136,7 @@ begin
             counter_reset <= '1';
             spi_state     <= IDLE;
           end if;
-        when others => spi_state     <= IDLE;
+        when others => spi_state     <= IDLE; -- REVIEW: redundant as all choices are covered above
       end case;
     end if;
   end process;

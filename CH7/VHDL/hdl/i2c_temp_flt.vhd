@@ -16,8 +16,8 @@ entity i2c_temp is
         -- Temperature Sensor Interface
         TMP_SCL : inout std_logic;
         TMP_SDA : inout std_logic;
-        TMP_INT : inout std_logic;
-        TMP_CT  : inout std_logic;
+        TMP_INT : inout std_logic; -- REVIEW: unused port
+        TMP_CT  : inout std_logic; -- REVIEW: unused port
 
         -- Switch Interface
         SW      : in    std_logic;
@@ -38,7 +38,7 @@ architecture rtl of i2c_temp is
   constant TIME_TSUSTA : integer := integer(600/CLK_PER);
   constant TIME_THIGH  : integer := integer(600/CLK_PER);
   constant TIME_TLOW   : integer := integer(1300/CLK_PER);
-  constant TIME_TSUDAT : integer := integer(20/CLK_PER);
+  constant TIME_TSUDAT : integer := integer(20/CLK_PER); -- REVIEW: unused declaration
   constant TIME_TSUSTO : integer := integer(600/CLK_PER);
   constant TIME_THDDAT : integer := integer(30/CLK_PER);
   constant I2C_ADDR    : std_logic_vector := "1001011"; -- 0x4B
@@ -78,9 +78,9 @@ architecture rtl of i2c_temp is
   type spi_t is (IDLE, START, TLOW, TSU, THIGH, THD, TSTO);
   signal spi_state : spi_t := IDLE;
   attribute MARK_DEBUG of spi_state : signal is "TRUE";
-  signal fraction : array_t(3 downto 0)(3 downto 0);
+  signal fraction : array_t(3 downto 0)(3 downto 0); -- REVIEW: unused declaration
   type int_array is array (0 to 15) of integer range 0 to 65535;
-  signal fraction_table : int_array :=
+  signal fraction_table : int_array := -- REVIEW: could be refactored into a constant
     (0  => 0*625,
      1  => 1*625,
      2  => 2*625,
@@ -105,7 +105,7 @@ architecture rtl of i2c_temp is
   attribute MARK_DEBUG of rden : signal is "TRUE";
   signal convert_pipe : std_logic_vector(2 downto 0);
   attribute MARK_DEBUG of convert_pipe : signal is "TRUE";
-  signal divide : array_t(16 downto 0)(31 downto 0) :=
+  signal divide : array_t(16 downto 0)(31 downto 0) := -- REVIEW: could be refactored into a constant
     (0    => x"3F800000", -- 1
      1    => x"3F000000", -- 1/2
      2    => x"3eaaaaab", -- 1/3
@@ -141,11 +141,11 @@ architecture rtl of i2c_temp is
   signal mult_in_valid : std_logic;
   signal fused_data : std_logic_vector(31 downto 0);
   signal fused_valid : std_logic;
-  signal s_axis_a_tready : std_logic;
+  signal s_axis_a_tready : std_logic; -- REVIEW: unused declaration
   signal temp_float_valid : std_logic;
   signal temp_float : std_logic_vector(31 downto 0);
   signal fp_add_op : std_logic_vector(7 downto 0);
-  signal accum_valid : std_logic;
+  signal accum_valid : std_logic; -- REVIEW: unused declaration
   signal addsub_in : array_t(1 downto 0)(31 downto 0);
   signal addsub_data : std_logic_vector(31 downto 0);
   signal addsub_valid : std_logic;
@@ -164,7 +164,7 @@ begin
   capture_en <= i2c_capt(I2CBITS - bit_count - 1);
 
   process (clk) begin
-    if rising_edge(clk) then
+    if rising_edge(clk) then -- REVIEW: process has no reset
       scl_en                     <= '1';
       sda_en                     <= not i2c_en(I2CBITS - bit_count - 1) or
                                     i2c_data(I2CBITS - bit_count - 1);
@@ -236,13 +236,13 @@ begin
             counter_reset <= '1';
             spi_state     <= IDLE;
           end if;
-        when others => spi_state     <= IDLE;
+        when others => spi_state     <= IDLE; -- REVIEW: redundant, as all choices are covered above
       end case;
     end if;
   end process;
 
   g_NO_SMOOTH : if SMOOTHING = 0 generate
-      smooth_data <= "0000000000000000000000" & temp_data(15 downto 3);
+      smooth_data <= "0000000000000000000000" & temp_data(15 downto 3); -- REVIEW: size mismatch RHS should have 16 bits like smooth_data
       smooth_convert <= convert;
     else generate
 
@@ -368,8 +368,8 @@ begin
   process (clk)
     variable sd_int : integer range 0 to 15;
   begin
-    sd_int := to_integer(unsigned(smooth_data(3 downto 0)));
     if rising_edge(clk) then
+      sd_int := to_integer(unsigned(smooth_data(3 downto 0))); -- REVIEW: moved this into if block
       if smooth_convert then
         encoded_int  <= bin_to_bcd("00000000000000000000000" & smooth_data(12 downto 4)); -- Decimal portion
         encoded_frac <= bin_to_bcd(std_logic_vector(to_unsigned(fraction_table(sd_int), 32)));
